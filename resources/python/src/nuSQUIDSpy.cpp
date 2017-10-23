@@ -315,6 +315,9 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSNSIAtm_Set_initial_state,nuSQUIDS
     .def("EvalFlavor",(double(nuSQUIDSAtm<TYPE>::*)(unsigned int,double,double,unsigned int,bool) const)&nuSQUIDSAtm<TYPE>::EvalFlavor, \
         nuSQUIDSAtm_EvalFlavor_overload(args("Flavor","cos(theta)","Neutrino Energy","NeuType","BoolToRandomzeProdutionHeight"), \
           "Reads an HDF5 file and loads the contents into the current object.")) \
+    .def("Set_EvalThreads",&nuSQUIDSAtm<TYPE>::Set_EvalThreads) \
+    .def("Get_EvalThreads",&nuSQUIDSAtm<TYPE>::Get_EvalThreads) \
+    .def("Set_EarthModel",&nuSQUIDSAtm<TYPE>::Set_EarthModel) \
     .def("WriteStateHDF5",&nuSQUIDSAtm<TYPE>::WriteStateHDF5) \
     .def("ReadStateHDF5",&nuSQUIDSAtm<TYPE>::ReadStateHDF5) \
     .def("Set_MixingAngle",&nuSQUIDSAtm<TYPE>::Set_MixingAngle) \
