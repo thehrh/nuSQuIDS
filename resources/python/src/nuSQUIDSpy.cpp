@@ -34,6 +34,7 @@
 #include <SQuIDS/SQuIDS.h>
 #include <nuSQuIDS/nuSQuIDS.h>
 #include <nuSQuIDS/marray.h>
+#include <nuSQuIDS/nuSQuIDSNSI.h>
 
 #include <numpy/ndarrayobject.h>
 #include <numpy/ndarraytypes.h>
@@ -295,7 +296,48 @@ BOOST_PYTHON_FUNCTION_OVERLOADS(nuSQUIDS_HDF5Read_overload,wrap_ReadStateHDF5,2,
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSAtm_EvalFlavor_overload,EvalFlavor,3,5)
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDS_Set_initial_state,nuSQUIDS::Set_initial_state,1,2)
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSAtm_Set_initial_state,nuSQUIDSAtm<>::Set_initial_state,1,2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSNSI_Set_initial_state,nuSQUIDSNSI::Set_initial_state,1,2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSAtm_Set_initial_state,nuSQUIDSAtm<nuSQUIDS>::Set_initial_state,1,2)
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(nuSQUIDSNSIAtm_Set_initial_state,nuSQUIDSAtm<nuSQUIDSNSI>::Set_initial_state,1,2)
+
+#define CREATE_ATM_BINDING(TYPE) \
+  class_<nuSQUIDSAtm<TYPE>, boost::noncopyable, std::shared_ptr<nuSQUIDSAtm<TYPE>> >(#TYPE "Atm", no_init) \
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType>(args("CosZenith_vector","E_vector","numneu","NT"))) \
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType,bool>(args("CosZenith_vector","E_vector","numneu","NT","iinteraction"))) \
+    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType,bool,std::shared_ptr<NeutrinoCrossSections>>(args("CosZenith_vector","E_vector","numneu","NT","iinteraction","ncs"))) \
+    .def(init<std::string>(args("filename"))) \
+    .def("EvolveState",&nuSQUIDSAtm<TYPE>::EvolveState) \
+    .def("Set_TauRegeneration",&nuSQUIDSAtm<TYPE>::Set_TauRegeneration) \
+    /*.def("EvalFlavor",&nuSQUIDSAtm<TYPE>::EvalFlavor)*/ \
+    /*.def("EvalFlavor",&nuSQUIDSAtm<TYPE>::EvalFlavor, \
+        nuSQUIDSAtm_EvalFlavor_overload(args("Flavor","cos(theta)","Neutrino Energy","NeuType","BoolToRandomzeProdutionHeight"), \
+          "Reads an HDF5 file and loads the contents into the current object."))*/ \
+    .def("EvalFlavor",(double(nuSQUIDSAtm<TYPE>::*)(unsigned int,double,double,unsigned int,bool) const)&nuSQUIDSAtm<TYPE>::EvalFlavor, \
+        nuSQUIDSAtm_EvalFlavor_overload(args("Flavor","cos(theta)","Neutrino Energy","NeuType","BoolToRandomzeProdutionHeight"), \
+          "Reads an HDF5 file and loads the contents into the current object.")) \
+    .def("WriteStateHDF5",&nuSQUIDSAtm<TYPE>::WriteStateHDF5) \
+    .def("ReadStateHDF5",&nuSQUIDSAtm<TYPE>::ReadStateHDF5) \
+    .def("Set_MixingAngle",&nuSQUIDSAtm<TYPE>::Set_MixingAngle) \
+    .def("Set_CPPhase",&nuSQUIDSAtm<TYPE>::Set_CPPhase) \
+    .def("Set_SquareMassDifference",&nuSQUIDSAtm<TYPE>::Set_SquareMassDifference) \
+    .def("Set_ProgressBar",&nuSQUIDSAtm<TYPE>::Set_ProgressBar) \
+    .def("Set_MixingParametersToDefault",&nuSQUIDSAtm<TYPE>::Set_MixingParametersToDefault) \
+    .def("Set_GSL_step",wrap_nusqatm_Set_GSL_STEP) \
+    .def("Set_rel_error",(void(nuSQUIDSAtm<TYPE>::*)(double))&nuSQUIDSAtm<TYPE>::Set_rel_error) \
+    .def("Set_rel_error",(void(nuSQUIDSAtm<TYPE>::*)(double, unsigned int))&nuSQUIDSAtm<TYPE>::Set_rel_error) \
+    .def("Set_abs_error",(void(nuSQUIDSAtm<TYPE>::*)(double))&nuSQUIDSAtm<TYPE>::Set_abs_error) \
+    .def("Set_abs_error",(void(nuSQUIDSAtm<TYPE>::*)(double, unsigned int))&nuSQUIDSAtm<TYPE>::Set_abs_error) \
+    .def("GetNumE",&nuSQUIDSAtm<TYPE>::GetNumE) \
+    .def("GetNumCos",&nuSQUIDSAtm<TYPE>::GetNumCos) \
+    .def("GetNumNeu",&nuSQUIDSAtm<TYPE>::GetNumNeu) \
+    .def("GetNumRho",&nuSQUIDSAtm<TYPE>::GetNumRho) \
+    /*.def("EvalMass",(double(nuSQUIDS::*)(unsigned int,double,unsigned int) const)&nuSQUIDS::EvalMass) */ \
+    .def("GetnuSQuIDS",(TYPE&(nuSQUIDSAtm<TYPE>::*)(unsigned int))&nuSQUIDSAtm<TYPE>::GetnuSQuIDS,boost::python::return_internal_reference<>()) \
+    .def("Set_initial_state",(void(nuSQUIDSAtm<TYPE>::*)(const marray<double,3>&, Basis))&nuSQUIDSAtm<TYPE>::Set_initial_state,TYPE ## Atm_Set_initial_state()) \
+    .def("Set_initial_state",(void(nuSQUIDSAtm<TYPE>::*)(const marray<double,4>&, Basis))&nuSQUIDSAtm<TYPE>::Set_initial_state,TYPE ## Atm_Set_initial_state()) \
+    .def("GetERange",&nuSQUIDSAtm<TYPE>::GetERange) \
+    .def("GetCosthRange",&nuSQUIDSAtm<TYPE>::GetCosthRange) \
+  ;
 
 // nuSQUIDSpy module definitions
 
@@ -387,6 +429,7 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("Get_MixingAngle",&nuSQUIDS::Get_MixingAngle)
     .def("Set_CPPhase",&nuSQUIDS::Set_CPPhase)
     .def("Get_CPPhase",&nuSQUIDS::Get_CPPhase)
+    .def("Set_IncludeOscillations",&nuSQUIDS::Set_IncludeOscillations)
     .def("Set_SquareMassDifference",&nuSQUIDS::Set_SquareMassDifference)
     .def("Get_SquareMassDifference",&nuSQUIDS::Get_SquareMassDifference)
     .def("GetTrack",&nuSQUIDS::GetTrack)
@@ -395,43 +438,61 @@ BOOST_PYTHON_MODULE(nuSQUIDSpy)
     .def("GetNumRho",&nuSQUIDS::GetNumRho)
   ;
 
-  class_<nuSQUIDSAtm<>, boost::noncopyable, std::shared_ptr<nuSQUIDSAtm<>> >("nuSQUIDSAtm", no_init)
-    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType>(args("CosZenith_vector","E_vector","numneu","NT")))
-    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType,bool>(args("CosZenith_vector","E_vector","numneu","NT","iinteraction")))
-    .def(init<marray<double,1>,marray<double,1>,unsigned int,NeutrinoType,bool,std::shared_ptr<NeutrinoCrossSections>>(args("CosZenith_vector","E_vector","numneu","NT","iinteraction","ncs")))
-    .def(init<std::string>(args("filename")))
-    .def("EvolveState",&nuSQUIDSAtm<>::EvolveState)
-    .def("Set_TauRegeneration",&nuSQUIDSAtm<>::Set_TauRegeneration)
-    //.def("EvalFlavor",&nuSQUIDSAtm<>::EvalFlavor)
-    .def("EvalFlavor",(double(nuSQUIDSAtm<>::*)(unsigned int,double,double,unsigned int,bool) const)&nuSQUIDSAtm<>::EvalFlavor,
-        nuSQUIDSAtm_EvalFlavor_overload(args("Flavor","cos(theta)","Neutrino Energy","NeuType","BoolToRandomzeProdutionHeight"),
-          "Reads an HDF5 file and loads the contents into the current object."))
-    .def("Set_EvalThreads",&nuSQUIDSAtm<>::Set_EvalThreads)
-    .def("Get_EvalThreads",&nuSQUIDSAtm<>::Get_EvalThreads)
-    .def("Set_EarthModel",&nuSQUIDSAtm<>::Set_EarthModel)
-    .def("WriteStateHDF5",&nuSQUIDSAtm<>::WriteStateHDF5)
-    .def("ReadStateHDF5",&nuSQUIDSAtm<>::ReadStateHDF5)
-    .def("Set_MixingAngle",&nuSQUIDSAtm<>::Set_MixingAngle)
-    .def("Set_CPPhase",&nuSQUIDSAtm<>::Set_CPPhase)
-    .def("Set_SquareMassDifference",&nuSQUIDSAtm<>::Set_SquareMassDifference)
-    .def("Set_ProgressBar",&nuSQUIDSAtm<>::Set_ProgressBar)
-    .def("Set_MixingParametersToDefault",&nuSQUIDSAtm<>::Set_MixingParametersToDefault)
-    .def("Set_GSL_step",wrap_nusqatm_Set_GSL_STEP)
-    .def("Set_rel_error",(void(nuSQUIDSAtm<>::*)(double))&nuSQUIDSAtm<>::Set_rel_error)
-    .def("Set_rel_error",(void(nuSQUIDSAtm<>::*)(double, unsigned int))&nuSQUIDSAtm<>::Set_rel_error)
-    .def("Set_abs_error",(void(nuSQUIDSAtm<>::*)(double))&nuSQUIDSAtm<>::Set_abs_error)
-    .def("Set_abs_error",(void(nuSQUIDSAtm<>::*)(double, unsigned int))&nuSQUIDSAtm<>::Set_abs_error)
-    .def("GetNumE",&nuSQUIDSAtm<>::GetNumE)
-    .def("GetNumCos",&nuSQUIDSAtm<>::GetNumCos)
-    .def("GetNumNeu",&nuSQUIDSAtm<>::GetNumNeu)
-    .def("GetNumRho",&nuSQUIDSAtm<>::GetNumRho)
-    //.def("EvalMass",(double(nuSQUIDS::*)(unsigned int,double,unsigned int) const)&nuSQUIDS::EvalMass)
-    .def("GetnuSQuIDS",(nuSQUIDS&(nuSQUIDSAtm<>::*)(unsigned int))&nuSQUIDSAtm<>::GetnuSQuIDS,boost::python::return_internal_reference<>())
-    .def("Set_initial_state",(void(nuSQUIDSAtm<>::*)(const marray<double,3>&, Basis))&nuSQUIDSAtm<>::Set_initial_state,nuSQUIDSAtm_Set_initial_state())
-    .def("Set_initial_state",(void(nuSQUIDSAtm<>::*)(const marray<double,4>&, Basis))&nuSQUIDSAtm<>::Set_initial_state,nuSQUIDSAtm_Set_initial_state())
-    .def("GetERange",&nuSQUIDSAtm<>::GetERange)
-    .def("GetCosthRange",&nuSQUIDSAtm<>::GetCosthRange)
+  class_<nuSQUIDSNSI, boost::noncopyable, std::shared_ptr<nuSQUIDSNSI> >("nuSQUIDSNSI", no_init)
+    .def(init<marray<double,1>,unsigned int,NeutrinoType,bool>(args("E_vector","numneu","NT","iinteraction")))
+    .def("Set_initial_state",(void(nuSQUIDSNSI::*)(const marray<double,1>&, Basis))&nuSQUIDSNSI::Set_initial_state,nuSQUIDSNSI_Set_initial_state())
+    .def("Set_initial_state",(void(nuSQUIDSNSI::*)(const marray<double,2>&, Basis))&nuSQUIDSNSI::Set_initial_state,nuSQUIDSNSI_Set_initial_state())
+    .def("Set_initial_state",(void(nuSQUIDSNSI::*)(const marray<double,3>&, Basis))&nuSQUIDSNSI::Set_initial_state,nuSQUIDSNSI_Set_initial_state())
+    .def("Set_Body",&nuSQUIDSNSI::Set_Body, bp::arg("Body"))
+    .def("Set_Track",&nuSQUIDSNSI::Set_Track, bp::arg("Track"))
+    .def("Set_E",&nuSQUIDSNSI::Set_E, bp::arg("NeutrinoEnergy"))
+    .def("EvolveState",&nuSQUIDSNSI::EvolveState)
+    .def("GetERange",&nuSQUIDSNSI::GetERange)
+    .def("GetNumNeu",&nuSQUIDSNSI::GetNumNeu)
+    .def("EvalMass",(double(nuSQUIDSNSI::*)(unsigned int) const)&nuSQUIDSNSI::EvalMass)
+    .def("EvalFlavor",(double(nuSQUIDSNSI::*)(unsigned int) const)&nuSQUIDSNSI::EvalFlavor)
+    .def("EvalMass",(double(nuSQUIDSNSI::*)(unsigned int,double,unsigned int) const)&nuSQUIDSNSI::EvalMass)
+    .def("EvalFlavor",(double(nuSQUIDSNSI::*)(unsigned int,double,unsigned int) const)&nuSQUIDSNSI::EvalFlavor)
+    .def("EvalMassAtNode",(double(nuSQUIDSNSI::*)(unsigned int,unsigned int,unsigned int) const)&nuSQUIDSNSI::EvalMassAtNode)
+    .def("EvalFlavorAtNode",(double(nuSQUIDSNSI::*)(unsigned int,unsigned int,unsigned int) const)&nuSQUIDSNSI::EvalFlavorAtNode)
+    .def("GetHamiltonian",&nuSQUIDSNSI::GetHamiltonian)
+    //.def("GetState",&nuSQUIDSNSI::GetState)
+    .def("Set_h_min",&nuSQUIDSNSI::Set_h_min)
+    .def("Set_h_max",&nuSQUIDSNSI::Set_h_max)
+    .def("Set_h",&nuSQUIDSNSI::Set_h)
+    .def("Set_rel_error",&nuSQUIDSNSI::Set_rel_error)
+    .def("Set_abs_error",&nuSQUIDSNSI::Set_abs_error)
+    .def("Set_AdaptiveStep",&nuSQUIDSNSI::Set_AdaptiveStep)
+    .def("Set_GSL_step",wrap_Set_GSL_STEP)
+    .def("Set_TauRegeneration",&nuSQUIDSNSI::Set_TauRegeneration)
+    .def("Set_ProgressBar",&nuSQUIDSNSI::Set_ProgressBar)
+    .def("Set_MixingParametersToDefault",&nuSQUIDSNSI::Set_MixingParametersToDefault)
+    .def("Set_Basis",&nuSQUIDSNSI::Set_Basis)
+    .def("Set_MixingAngle",&nuSQUIDSNSI::Set_MixingAngle)
+    .def("Get_MixingAngle",&nuSQUIDSNSI::Get_MixingAngle)
+    .def("Set_CPPhase",&nuSQUIDSNSI::Set_CPPhase)
+    .def("Get_CPPhase",&nuSQUIDSNSI::Get_CPPhase)
+    .def("Set_IncludeOscillations",&nuSQUIDSNSI::Set_IncludeOscillations)
+    .def("Set_SquareMassDifference",&nuSQUIDSNSI::Set_SquareMassDifference)
+    .def("Get_SquareMassDifference",&nuSQUIDSNSI::Get_SquareMassDifference)
+    .def("GetTrack",&nuSQUIDSNSI::GetTrack)
+    .def("GetBody",&nuSQUIDSNSI::GetBody)
+    .def("GetNumE",&nuSQUIDSNSI::GetNumE)
+    .def("GetNumRho",&nuSQUIDSNSI::GetNumRho)
+    //.def("AddToPreDerive",&nuSQUIDSNSI::AddToPreDerive)
+    .def("Set_all_epsilons",&nuSQUIDSNSI::Set_all_epsilons)
+    //.def("HI",&nuSQUIDSNSI::HI)
+    .def("Set_epsilon_mutau",&nuSQUIDSNSI::Set_epsilon_mutau)
+    .def("Set_epsilon_mumu",&nuSQUIDSNSI::Set_epsilon_mumu)
+    .def("Set_epsilon_emu",&nuSQUIDSNSI::Set_epsilon_emu)
+    .def("Set_epsilon_tautau",&nuSQUIDSNSI::Set_epsilon_tautau)
+    .def("Set_epsilon_ee",&nuSQUIDSNSI::Set_epsilon_ee)
+    .def("Set_epsilon_etau",&nuSQUIDSNSI::Set_epsilon_etau)
+    .def("print_matrix",&nuSQUIDSNSI::print_matrix)
   ;
+
+  CREATE_ATM_BINDING(nuSQUIDS);
+  CREATE_ATM_BINDING(nuSQUIDSNSI);
 
 
   class_<squids::Const, boost::noncopyable>("Const")
